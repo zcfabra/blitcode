@@ -1,35 +1,67 @@
 import { NextPage } from 'next'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {Formik, Form, Field} from "formik"
-import io from "socket.io-client"
+import io, { Socket } from "socket.io-client"
+import { useRouter } from 'next/router'
 
+
+let socket:Socket;
 const NewRoom: NextPage= () => {
-    let socket;
+    const router = useRouter()
+    const [connected, setConnected] = useState<boolean>(false);
+    const [ room, setRoom] = useState<string  | null>(null);
+    const [message, setMessage] = useState<string>("");
+ 
+    useEffect(()=>{
+        (async()=>{
+            await fetch("/api/socket");
+            socket = io();
 
-    const handleConnect = async () =>{
-        const res = await fetch("/api/socket");
-        socket = io();
+            socket.on("connect",()=>{
+                console.log("POWPOW");
+                // setConnected(true);
+            });
 
-        socket.on("connect", ()=>{
-            console.log("connected");
-        })
-    }
+            socket.on("receive-message", msg=>{
+                console.log(msg)
+            })
+
+            socket.on("accepted-into-room", room=>{
+                console.log("ACCEPTED INTO ROOM ", room)
+                setConnected(true)
+                setRoom(room);
+            });
+
+            socket.on("rejected-from-room", ()=>{
+                console.log("REJECTED FROM ROOM")
+            })
+
+        }
+            )()
+    }, [])
+
+
     
   return (
     <div className='w-full h-screen bg-black text-purple-500 flex flex-col items-center p-24'>
-        <h1 className='text-8xl font-bold mb-16'>New Room</h1>
-        <Formik initialValues={{name: "", password: ""}} onSubmit={(values)=>{
-            console.log(values);
-        }}>
-            {()=>(
-                <Form className='flex flex-col items-center w-8/12'>
-                    <Field placeholder="Room Name" className="w-full px-4 my-4 h-16 border border-purple-500 text-white rounded-md bg-transparent" name="name"></Field>
-                    <Field placeholder="Password"  className="w-full px-4 my-4 h-16 border border-purple-500 text-white rounded-md bg-transparent" name="password"></Field>
-                    <button onClick={()=>handleConnect()} className='w-36 mt-16 ml-auto h-16 text-white bg-gradient-to-r from-purple-500 to-orange-500 rounded-md text-xl font-light' type="submit">Create</button>
-                </Form>
-            )}
-        </Formik>
+        {!connected ? (<>
+        <h1 className='text-8xl font-bold mb-16'>Join Room</h1>
+        <button onClick={()=>socket.emit("create-room",{room: "room",password:"abc"})}>Room Init</button>
+        <button onClick={()=>socket.emit("request-join-room",{room: "room", password: "abc"})}>Hi</button>
+       
 
+    </>
+    ) : (
+        <div>
+            <h1>{room}</h1>
+            {room && (<>
+                <input value={message} onChange={(e)=>setMessage(e.target.value)}type="text" />
+                <button onClick={()=>{
+                    socket.emit("send-message", message, room);
+                }} className='bg-purple-500 w-36 h-16 rounded-md'></button>
+                </>)}
+        </div>
+        )}
     </div>
   )
 }
