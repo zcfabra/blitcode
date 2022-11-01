@@ -28,7 +28,12 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
 
             s.on("send-message", (msg, room)=>{
                 console.log(msg, room);
-                io.to(room).emit("receive-message",msg)
+                io.to(room).emit("get-message",msg)
+            });
+
+            s.on("update-code", (code, room)=>{
+                console.log(code, room);
+                io.to(room).emit("get-code-update", code)
             });
 
             // s.on("create-or-join", (roomName, password)=>{
@@ -50,6 +55,7 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
             s.on("request-join-room", (roomName, password)=>{
                 const stored_password = kv.get(roomName);
                 if (!stored_password){
+
                     s.emit("rejected-from-room", roomName, "Room does not exist");
                     return
                 }
@@ -57,7 +63,7 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                     s.emit("rejected-from-room", roomName, "Wrong password");
                     return
                 }
-
+                s.join(roomName);
                 s.emit("accepted-into-room", roomName)
             })
 
@@ -74,6 +80,7 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                 } 
 
                 kv.set(newRoomName, password);
+                s.join(roomName)
                 s.emit("accepted-into-room", newRoomName);
             })
         })

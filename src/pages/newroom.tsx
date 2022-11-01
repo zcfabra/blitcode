@@ -7,6 +7,10 @@ import { pythonLanguage } from '@codemirror/lang-python'
 
 import ReactCodeMirror from '@uiw/react-codemirror'
 
+type Message= {
+    sender: string,
+    message:string
+}
 
 let socket:Socket;
 const NewRoom: NextPage= () => {
@@ -19,6 +23,9 @@ const NewRoom: NextPage= () => {
     const [code, setCode] = useState<string>("");
     const [print, setPrint] = useState<string>("");
     const [runShortcut, setRunShortcut] = useState<{first: boolean, enter: boolean}>({first: false, enter: false});
+    const [message, setMessage] = useState<string>("");
+    const [messageLog, setMessageLog] = useState<Message[]>([]);
+    const [username, setUserName] = useState<string>(`name${Math.floor(Math.random() * 10)}`)
 
     useEffect(()=>{
         if (runShortcut.first && runShortcut.enter){
@@ -36,8 +43,15 @@ const NewRoom: NextPage= () => {
                 // setConnected(true);
             });
 
-            socket.on("receive-message", msg=>{
+            socket.on("get-code-update", CODE=>{
+                console.log("HIT")
+                console.log("HI",CODE)
+                setCode(CODE);
+            });
+
+            socket.on("get-message", msg=>{
                 console.log(msg)
+                setMessageLog(prev=>[...prev, msg])
             })
 
             socket.on("accepted-into-room", room=>{
@@ -54,7 +68,7 @@ const NewRoom: NextPage= () => {
 
         }
             )()
-    }, []);
+    }, [setCode]);
 
 
     const handleRoomRequest = () =>{
@@ -75,8 +89,8 @@ const NewRoom: NextPage= () => {
     }
 
     const onChange = React.useCallback((value: string, viewUpdate: any)=>{
-        setCode(value);
-    }, []);
+        socket.emit("update-code",value, roomName)
+    }, [socket, roomName]);
 
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>)=>{
@@ -102,6 +116,10 @@ const NewRoom: NextPage= () => {
             setRunShortcut(prev=>({...prev, ["enter"]: false}))
         }
     }
+
+    const handleMessageSend = ()=>{
+        socket.emit("send-message", {sender: username, message: message}, roomName)
+    }
   return (
     <div className={`w-full h-screen bg-black text-purple-500 flex flex-col items-center ${joinedRoom ? "p-8" : "p-24"}`}>
         {!connected ? (<>
@@ -119,25 +137,43 @@ const NewRoom: NextPage= () => {
 
     </>
     ) : (
-        <div className=' w-full h-screen absolute top-0 flex flex-col'>
-            <div className='w-full '>
-                <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-500'>{joinedRoom}</h1>
-            </div>
-            <div className='w-full flex flex-row h-5/6'>
-            <div className='relative w-6/12 flex flex-col h-full'>
-               <ReactCodeMirror
-               extensions={[pythonLanguage]}
-               onKeyDown={handleKeyDown}
-               onKeyUp={handleKeyUp}
-                className="h-full"
-                height='100%'
-               theme="dark"
-               onChange={onChange}
-               />
-               <button onClick={handleRunCode} className=' absolute bottom-0 w-20 h-12 bg-gradient-to-r from-purple-500 to-orange-500 ml-auto  rounded-md text-white'>Run</button>
-            </div>
-            <div className='w-6/12 h-full bg-gray-900 p-4 overflow-y-scroll text-white'>
-                <span className='whitespace-pre-line'>{print}</span>
+        <div className=' w-full h-screen absolute top-0 flex bg-black flex-col'>
+            <div className='w-full flex flex-row h-full '>
+                <div className='relative w-6/12 flex flex-col h-full'>
+                <ReactCodeMirror
+                value={code}
+                extensions={[pythonLanguage]}
+                onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
+                    className="h-full"
+                    height='100%'
+                theme="dark"
+                onChange={onChange}
+                />
+                <button onClick={handleRunCode} className=' absolute bottom-0 w-20 h-12 bg-gradient-to-r from-purple-500 to-orange-500 ml-auto  rounded-md text-white'>Run</button>
+                </div>
+            <div className='w-6/12 h-full bg-black overflow-y-scroll text-white flex flex-col'>
+                <div className='w-full h-3/6 flex flex-col p-4'>
+                    <span className='font-bold text-xl mb-2'>Console for {roomName}</span>
+                    <div className='h-full overflow-y-scroll text-light'>
+                        <span className='whitespace-pre-line'>{print}</span>
+                    </div>
+                </div>
+                <div className='relative w-full h-3/6  border-t border-gray-300'>
+                    <div className='w-full h-5/6 overflow-scroll'>
+                        {messageLog.map((i,ix)=>(
+                            <div key={ix}className={`w-full h-24 flex flex-col p-4 ${i.sender == username? "items-end" : "items-start"} `}>
+                                <span className='text-xs font-light'>{i.sender}</span>
+                                <span>{i.message}</span>
+
+                            </div>
+                        ))}
+                    </div>
+                    <div className='w-full h-24 p-4 absolute bottom-0 flex flex-row'>
+                        <input value={message} onChange={(e)=>setMessage(e.target.value)} className='w-10/12 rounded-l-md border bg-transparent border-gray-500 text-white px-4' type="text" />
+                        <button onClick={()=>handleMessageSend()}className='w-2/12 bg-purple-500 rounded-r-md text-white'>Send</button>
+                    </div>
+                </div>
 
             </div>
             </div>
