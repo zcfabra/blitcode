@@ -52,7 +52,15 @@ const NewRoom: NextPage= () => {
 
 
     const handleRunCode = async ()=>{
-        const res = await fetch("/api/run").then(res=>console.log(res.json()))
+        const res = await fetch("/api/run", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({data: code})
+        }).then(res=>res.json())
+
+        console.log(res)
     }
   return (
     <div className={`w-full h-screen bg-black text-purple-500 flex flex-col items-center ${joinedRoom ? "p-8" : "p-24"}`}>
@@ -74,7 +82,7 @@ const NewRoom: NextPage= () => {
         <div className=' w-full h-screen absolute top-0 flex flex-col'>
             <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-500'>{joinedRoom}</h1>
             <div>
-                <textarea value={code} onChange={(e)=>setCode(e.target.value)} name="ide" id="" cols="30" rows="10"></textarea>
+                <textarea value={code} onChange={(e)=>setCode(e.target.value)} name="ide" id="" cols={30} rows={10}></textarea>
                 <button onClick={handleRunCode}className='w-24 h-12 bg-purple-500 text-white rounded-md'>Run</button>
             </div>
         </div>
