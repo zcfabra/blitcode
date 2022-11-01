@@ -14,6 +14,9 @@ function defineNextConfig(config) {
   return config;
 }
 
+
+
+
 export default defineNextConfig({
   reactStrictMode: false,
   swcMinify: true,
@@ -26,4 +29,5 @@ export default defineNextConfig({
     locales: ["en"],
     defaultLocale: "en",
   },
+
 });

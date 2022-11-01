@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react'
 import {Formik, Form, Field} from "formik"
 import io, { Socket } from "socket.io-client"
 import { useRouter } from 'next/router'
+import { pythonLanguage } from '@codemirror/lang-python'
+
+import ReactCodeMirror from '@uiw/react-codemirror'
 
 
 let socket:Socket;
@@ -13,7 +16,8 @@ const NewRoom: NextPage= () => {
     const [password, setPassword] = useState<string>("");
     const [joinedRoom, setJoinedRoom] = useState<string|null>(null);
     const [createRoom, setCreateRoom] = useState<boolean>(false);
-    const [code, setCode] = useState<string>("")
+    const [code, setCode] = useState<string>("");
+    const [print, setPrint] = useState<string>("");
  
     useEffect(()=>{
         (async()=>{
@@ -60,8 +64,17 @@ const NewRoom: NextPage= () => {
             body: JSON.stringify({data: code})
         }).then(res=>res.json())
 
-        console.log(res)
+        setPrint(res["data"])
     }
+
+    const onChange = React.useCallback((value: string, viewUpdate: any)=>{
+        setCode(value);
+    }, []);
+
+
+    // const handleKeysDown = (e: React.KeyboardEvent<HTMLTextAreaElement>)=>{
+    //     if 
+    // }
   return (
     <div className={`w-full h-screen bg-black text-purple-500 flex flex-col items-center ${joinedRoom ? "p-8" : "p-24"}`}>
         {!connected ? (<>
@@ -79,11 +92,21 @@ const NewRoom: NextPage= () => {
 
     </>
     ) : (
-        <div className=' w-full h-screen absolute top-0 flex flex-col'>
+        <div className=' w-full h-screen absolute top-0 flex flex-row'>
             <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-500'>{joinedRoom}</h1>
-            <div>
-                <textarea value={code} onChange={(e)=>setCode(e.target.value)} name="ide" id="" cols={30} rows={10}></textarea>
-                <button onClick={handleRunCode}className='w-24 h-12 bg-purple-500 text-white rounded-md'>Run</button>
+            <div className='w-6/12 flex flex-col h-full'>
+               <ReactCodeMirror
+               extensions={[pythonLanguage]}
+            //    onKeyDownCapture={handleKeysDown}
+                height="500px"
+               theme="dark"
+               onChange={onChange}
+               />
+               <button onClick={handleRunCode} className='w-20 h-12 bg-purple-500 rounded-md'>Run</button>
+            </div>
+            <div className='w-6/12 h-full bg-gray-900 p-4 text-white'>
+                <span>{print}</span>
+
             </div>
         </div>
         )}
