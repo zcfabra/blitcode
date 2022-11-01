@@ -18,6 +18,13 @@ const NewRoom: NextPage= () => {
     const [createRoom, setCreateRoom] = useState<boolean>(false);
     const [code, setCode] = useState<string>("");
     const [print, setPrint] = useState<string>("");
+    const [runShortcut, setRunShortcut] = useState<{first: boolean, enter: boolean}>({first: false, enter: false});
+
+    useEffect(()=>{
+        if (runShortcut.first && runShortcut.enter){
+            handleRunCode();
+        }
+    }, [runShortcut])
  
     useEffect(()=>{
         (async()=>{
@@ -72,9 +79,29 @@ const NewRoom: NextPage= () => {
     }, []);
 
 
-    // const handleKeysDown = (e: React.KeyboardEvent<HTMLTextAreaElement>)=>{
-    //     if 
-    // }
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>)=>{
+        if ((e.key == "Ctrl" || e.key == "Meta" )){
+
+            setRunShortcut(prev=>({...prev,["first"]: true}))
+        }
+
+        if (e.key == "Enter"){
+            if (runShortcut.first){
+                e.preventDefault();
+            }
+
+            setRunShortcut(prev=>({...prev, ["enter"]: true}))
+        }
+    }
+    const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>)=>{
+        if ((e.key == "Ctrl" || e.key == "Meta")){
+            setRunShortcut(prev=>({...prev,["first"]: false}))
+
+        }
+        if (e.key == "Enter"){
+            setRunShortcut(prev=>({...prev, ["enter"]: false}))
+        }
+    }
   return (
     <div className={`w-full h-screen bg-black text-purple-500 flex flex-col items-center ${joinedRoom ? "p-8" : "p-24"}`}>
         {!connected ? (<>
@@ -92,22 +119,29 @@ const NewRoom: NextPage= () => {
 
     </>
     ) : (
-        <div className=' w-full h-screen absolute top-0 flex flex-row'>
-            <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-500'>{joinedRoom}</h1>
-            <div className='w-6/12 flex flex-col h-full'>
+        <div className=' w-full h-screen absolute top-0 flex flex-col'>
+            <div className='w-full '>
+                <h1 className='text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-orange-500'>{joinedRoom}</h1>
+            </div>
+            <div className='w-full flex flex-row h-5/6'>
+            <div className='relative w-6/12 flex flex-col h-full'>
                <ReactCodeMirror
                extensions={[pythonLanguage]}
-            //    onKeyDownCapture={handleKeysDown}
-                height="500px"
+               onKeyDown={handleKeyDown}
+               onKeyUp={handleKeyUp}
+                className="h-full"
+                height='100%'
                theme="dark"
                onChange={onChange}
                />
-               <button onClick={handleRunCode} className='w-20 h-12 bg-purple-500 rounded-md'>Run</button>
+               <button onClick={handleRunCode} className=' absolute bottom-0 w-20 h-12 bg-gradient-to-r from-purple-500 to-orange-500 ml-auto  rounded-md text-white'>Run</button>
             </div>
-            <div className='w-6/12 h-full bg-gray-900 p-4 text-white'>
-                <span>{print}</span>
+            <div className='w-6/12 h-full bg-gray-900 p-4 overflow-y-scroll text-white'>
+                <span className='whitespace-pre-line'>{print}</span>
 
             </div>
+            </div>
+            
         </div>
         )}
     </div>
