@@ -31,18 +31,50 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                 io.to(room).emit("receive-message",msg)
             });
 
-            s.on("create-or-join", (roomName, password)=>{
+            // s.on("create-or-join", (roomName, password)=>{
+            //     const stored_password = kv.get(roomName);
+            //     if (stored_password){
+            //         console.log("JOINED")
+            //         if (stored_password == password){
+            //             s.emit("accepted-into-room", roomName);
+            //         } else {
+            //             s.emit("rejected-from-room", roomName)
+            //         }
+            //     } else {
+            //         console.log("CREATED")
+            //         kv.set(roomName, password);
+            //         s.emit("accepted-into-room", roomName);
+            //     }
+            // })
+
+            s.on("request-join-room", (roomName, password)=>{
                 const stored_password = kv.get(roomName);
-                if (stored_password){
-                    if (stored_password == password){
-                        s.emit("accepted-into-room", roomName);
-                    } else {
-                        s.emit("rejected-from-room", roomName)
-                    }
-                } else {
-                    kv.set(roomName, password);
-                    s.emit("accepted-into-room", roomName);
+                if (!stored_password){
+                    s.emit("rejected-from-room", roomName, "Room does not exist");
+                    return
                 }
+                if (password != stored_password){
+                    s.emit("rejected-from-room", roomName, "Wrong password");
+                    return
+                }
+
+                s.emit("accepted-into-room", roomName)
+            })
+
+            s.on("create-room", (roomName, password)=>{
+                const stored_password = kv.get(roomName);
+                let newRoomName = roomName;
+                if (stored_password){
+                    let idx = 2
+                    newRoomName = roomName+String(idx);
+                    while (kv.get(newRoomName)){
+                        idx++;
+                        newRoomName = roomName + String(idx);
+                    }
+                } 
+
+                kv.set(newRoomName, password);
+                s.emit("accepted-into-room", newRoomName);
             })
         })
         
