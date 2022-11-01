@@ -31,25 +31,17 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                 io.to(room).emit("receive-message",msg)
             });
 
-            s.on("create-room", (room)=>{
-                kv.set(room.room,room.password);
-                s.join(room.room);
-                s.emit("accepted-into-room", room.room);
-            })
-            s.on("request-join-room", (room)=>{
-                console.log("req made", room)
-                if (kv.has(room.room)){
-                    let stored_pass = kv.get(room.room);
-                    console.log(stored_pass)
-                    if (stored_pass){
-                        if (room.password == stored_pass )
-                        {
-                            s.join(room.room)
-                            s.emit("accepted-into-room", room.room)
-                        } else {
-                            s.emit("rejected-from-room");
-                        }    
+            s.on("create-or-join", (roomName, password)=>{
+                const stored_password = kv.get(roomName);
+                if (stored_password){
+                    if (stored_password == password){
+                        s.emit("accepted-into-room", roomName);
+                    } else {
+                        s.emit("rejected-from-room", roomName)
                     }
+                } else {
+                    kv.set(roomName, password);
+                    s.emit("accepted-into-room", roomName);
                 }
             })
         })
