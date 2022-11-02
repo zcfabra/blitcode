@@ -2,6 +2,7 @@ import { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
 import { Server as SocketIOServer } from "socket.io";
 import {Socket} from "net"
 import {Server as NetServer} from "http"
+import redis from "../../lib/redis";
 
 const kv: Map<string, string | null> = new Map();
 
@@ -31,8 +32,9 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                 io.to(room).emit("get-message",msg)
             });
 
-            s.on("update-code", (code, room)=>{
+            s.on("update-code", async (code, room)=>{
                 console.log(code, room);
+                await redis.set(room, code);
                 io.to(room).emit("get-code-update", code)
             });
 
@@ -52,7 +54,7 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
             //     }
             // })
 
-            s.on("request-join-room", (roomName, password)=>{
+            s.on("request-join-room", async (roomName, password)=>{
                 const stored_password = kv.get(roomName);
                 if (!stored_password){
 
@@ -64,6 +66,11 @@ export default function SocketHandler (req: NextApiRequest , res: NextApiRespons
                     return
                 }
                 s.join(roomName);
+                const code =  await redis.get(roomName);
+                console.log(code)
+                if (code) {
+                    s.emit("get-code-update", await redis.get(roomName))
+                }
                 s.emit("accepted-into-room", roomName)
             })
 

@@ -23,6 +23,7 @@
     "@uiw/react-codemirror": "^4.12.4",
     "codemirror": "^6.0.1",
     "formik": "^2.2.9",
+    "ioredis": "^5.2.3",
     "next": "12.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -32,7 +33,7 @@
     "zod": "^3.18.0"
   },
   "devDependencies": {
-    "@types/node": "18.0.0",
+    "@types/node": "^18.0.0",
     "@types/react": "18.0.14",
     "@types/react-dom": "18.0.5",
     "@typescript-eslint/eslint-plugin": "^5.33.0",

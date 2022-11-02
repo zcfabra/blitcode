@@ -41,11 +41,19 @@ export const RunCode: NextApiHandler =  (req: NextApiRequest, res: NextApiRespon
     // proc.stdin.end();
 
     // res.status(404).send({data: "error"});
+    try {
 
-    const proc = execSync("python3", {input: req.body["data"]});
+        let proc = execSync("python3", {input: req.body["data"], stdio:["pipe", "pipe", "pipe"]});
+        res.status(200).json({data: proc.toString()});
+    } catch (e: any){
+        console.log(e)
+        res.status(200).json({data: e.stderr.toString()})
+    }
+   
+    
     // console.log(proc.toString())
 
-    res.status(200).json({data: proc.toString()});
+
     
 }
 

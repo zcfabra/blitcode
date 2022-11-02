@@ -94,7 +94,7 @@ const NewRoom: NextPage= () => {
 
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>)=>{
-        if ((e.key == "Ctrl" || e.key == "Meta" )){
+        if ((e.key == "Control")){
 
             setRunShortcut(prev=>({...prev,["first"]: true}))
         }
@@ -118,7 +118,8 @@ const NewRoom: NextPage= () => {
     }
 
     const handleMessageSend = ()=>{
-        socket.emit("send-message", {sender: username, message: message}, roomName)
+        socket.emit("send-message", {sender: username, message: message}, roomName);
+        setMessage("")
     }
   return (
     <div className={`w-full h-screen bg-black text-purple-500 flex flex-col items-center ${joinedRoom ? "p-8" : "p-24"}`}>
